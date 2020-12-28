@@ -1,10 +1,10 @@
 {-# LANGUAGE FlexibleContexts #-}
-module BellmanFord (BFResult, bellmanFord) where
+module BellmanFord where
 
 import Data.Array.IO
 import qualified Data.Graph.Inductive.Graph as G
 
-data Infinite a = NegInf | Just a | PosInf
+data Infinite a = NegInf | Just a | PosInf deriving (Eq)
 data BFResult a = R a | InInfCycle | ReachInfCycle
 
 type BFResultElem v = (Maybe G.Node, Infinite v)
@@ -15,6 +15,7 @@ initBF n = newArray (1::G.Node, n) (Nothing, NegInf)
 
 -- Relaxes a given node (internal loop)
 relax :: (MArray a (BFResultElem v) m) => G.Node -> m (a G.Node (BFResultElem v))
+relax _ = error "To Be Implemented"
 
 -- | Executes the Bellman-Ford algorithm
 -- Receives the graph and the vertex to which to calculate distances

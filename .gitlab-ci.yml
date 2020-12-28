@@ -1,0 +1,30 @@
+stages:
+  - build
+  - test
+
+variables:
+  STACK_ROOT: "${CI_PROJECT_DIR}/.stack"
+
+cache:
+  paths:
+    - .stack
+    - .stack-work
+    - bellman-ford-exe
+
+build haskell:
+  stage: build
+  artifacts:
+    paths:
+      - .stack-work
+      - bellman-ford-exe
+  image: fpco/stack-build
+  script:
+    - cd haskell
+    - stack setup
+    - stack build
+
+test haskell:
+  stage: test
+  image: fpco/stack-build
+  script:
+    - stack test
