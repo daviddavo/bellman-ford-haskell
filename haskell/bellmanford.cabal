@@ -29,7 +29,8 @@ library
   build-depends:
       array
     , base >=4.7 && <5
-    , containers
+    , fgl
+    , graphviz
   default-language: Haskell2010
 
 executable bellmanford-exe
@@ -43,7 +44,8 @@ executable bellmanford-exe
       array
     , base >=4.7 && <5
     , bellmanford
-    , containers
+    , fgl
+    , graphviz
   default-language: Haskell2010
 
 test-suite bellmanford-test
@@ -58,5 +60,6 @@ test-suite bellmanford-test
       array
     , base >=4.7 && <5
     , bellmanford
-    , containers
+    , fgl
+    , graphviz
   default-language: Haskell2010
