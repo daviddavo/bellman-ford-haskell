@@ -8,16 +8,16 @@ variables:
 cache:
   paths:
     - .stack
-    - .stack-work
+    - haskell/.stack-work
     - bellman-ford-exe
 
 build haskell:
   stage: build
   artifacts:
     paths:
-      - .stack-work
+      - haskell/.stack-work
       - bellman-ford-exe
-  image: fpco/stack-build
+  image: haskell
   script:
     - cd haskell
     - stack setup
@@ -25,6 +25,7 @@ build haskell:
 
 test haskell:
   stage: test
-  image: fpco/stack-build
+  image: haskell
   script:
+    - cd haskell
     - stack test

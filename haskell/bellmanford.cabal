@@ -22,6 +22,7 @@ source-repository head
 library
   exposed-modules:
       BellmanFord
+      Infinite
   other-modules:
       Paths_bellmanford
   hs-source-dirs:
