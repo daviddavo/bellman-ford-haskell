@@ -12,19 +12,54 @@ data BFResult a = R a | InInfCycle | ReachInfCycle
 type BFResultElem v = (Maybe G.Node, Infinite v)
 
 -- Receives number of nodes and returns init distance and pred
-initBF :: (MArray a (BFResultElem v) m) => Int -> m (a G.Node (BFResultElem v))
-initBF n = newArray (1::G.Node, n) (Nothing, PosInf)
+initBF :: (MArray a (BFResultElem v) m) =>
+    (G.Node, G.Node) -> 
+    m (a G.Node (BFResultElem v))
+initBF (a,b) = newArray (a,b) (Nothing, PosInf)
 
--- for edge in graph.edges
+-- Relaxes a given edge
 --   D[edge.to] = min(D[edge.to], D[edge.from] + edge.cost)
-
--- Relaxes a given edge (internal loop)
-relaxEdge :: (MArray a (BFResultElem v) m, Num v, Ord v) => a G.Node (BFResultElem v) -> G.LEdge v -> m ()
+relaxEdge :: (MArray a (BFResultElem v) m, Num v, Ord v) =>
+    a G.Node (BFResultElem v) -> 
+    G.LEdge v ->
+    m ()
 relaxEdge l (f, t, cost) = do
     (_, dfr) <- readArray l f
     (_, dto) <- readArray l t
     let aux = dfr + F cost
     when (aux < dto) (writeArray l t (Just f, aux))
+
+-- Relaxes all edges in the graph
+relaxAllEdges :: (MArray a (BFResultElem v) m, Num v, Ord v, G.Graph g) => 
+    a G.Node (BFResultElem v) -> 
+    g l v -> 
+    m ()
+relaxAllEdges arr gr = mapM_ (relaxEdge arr) (G.labEdges gr)
+
+-- for i = 1 to G.nodes - 1
+--   for each edge (u,v)
+--     relax(u,v)
+bfMainLoop :: (MArray a (BFResultElem v) m, Num v, Ord v, G.Graph g) =>
+    G.Node ->                       -- Remaining nodes
+    a G.Node (BFResultElem v) ->    -- Array of results
+    g l v ->                        -- Graph
+    m ()
+bfMainLoop 0 arr gr = return ()
+bfMainLoop n arr gr = relaxAllEdges arr gr >> bfMainLoop (n-1) arr gr
+
+-- IO (IOArray Node (BFResultElem Int))
+bellmanFordA :: (MArray a (BFResultElem v) m, Num v, Ord v, G.Graph g) =>
+    a G.Node (BFResultElem v) ->
+    g l v ->
+    G.Node ->
+    m (a G.Node (BFResultElem v))
+bellmanFordA arr gr s = do
+    let (i,f) = G.nodeRange gr
+    arr <- initBF (i,f)
+    writeArray arr s (Nothing, F 0)
+    bfMainLoop f arr gr
+    -- TODO: For each edge checking loop
+    return arr
 
 -- | Executes the Bellman-Ford algorithm
 -- Receives the graph and the vertex to which to calculate distances
