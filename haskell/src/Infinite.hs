@@ -25,11 +25,11 @@ instance (Num a, Eq a) => Num (Infinite a) where
     abs (F x) = F $ abs x
 
     PosInf + PosInf = PosInf
-    PosInf + (F _) = PosInf
-    (F _) + PosInf = PosInf
+    PosInf + F{} = PosInf
+    F{} + PosInf = PosInf
     NegInf + NegInf = NegInf
-    NegInf + (F _) = NegInf
-    (F _) + NegInf = NegInf
+    NegInf + F{} = NegInf
+    F{} + NegInf = NegInf
     (F x) + (F y) = F (x + y)
     _ + _ = NaN
 
@@ -46,6 +46,7 @@ instance (Num a, Eq a) => Num (Infinite a) where
     (F x) * PosInf = if signum x == 1 then PosInf else NegInf
     NegInf * (F x) = if signum x == 1 then NegInf else PosInf
     (F x) * NegInf = if signum x == 1 then NegInf else PosInf
+    (F x) * (F y) = F (x * y)
     _ * _ = NaN
 
     fromInteger = F . fromInteger

@@ -9,7 +9,7 @@ copyright:           "2020 David Davó Laviña"
 extra-source-files: []
 
 # Metadata used when publishing your package
-# synopsis:            Short description of your package
+# synopsis:            Bellman Ford algorithm implementation
 # category:            Web
 
 # To avoid duplicated efforts in documentation and dealing with the
@@ -47,4 +47,7 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - bellmanford
-    - QuickCheck
+    - tasty
+    - tasty-hunit
+    - tasty-smallcheck
+    - test-invariant
