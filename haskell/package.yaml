@@ -49,5 +49,6 @@ tests:
     - bellmanford
     - tasty
     - tasty-hunit
-    - tasty-smallcheck
+    - tasty-quickcheck
     - test-invariant
+    - QuickCheck

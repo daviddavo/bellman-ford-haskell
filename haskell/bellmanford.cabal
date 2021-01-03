@@ -58,13 +58,14 @@ test-suite bellmanford-test
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      array
+      QuickCheck
+    , array
     , base >=4.7 && <5
     , bellmanford
     , fgl
     , graphviz
     , tasty
     , tasty-hunit
-    , tasty-smallcheck
+    , tasty-quickcheck
     , test-invariant
   default-language: Haskell2010
