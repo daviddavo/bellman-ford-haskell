@@ -1,8 +1,11 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleContexts #-}
 module BellmanFord where
 
 import Control.Monad
-import Data.Array.IO
+import Control.Monad.ST
+import Data.Array.MArray
+import Data.Array.ST
 import qualified Data.Graph.Inductive.Graph as G
 
 import Infinite
@@ -79,5 +82,5 @@ bellmanFordA gr s = do
 -- | Executes the Bellman-Ford algorithm using default monads and configurations
 -- Receives the graph and the vertex to which to calculate distances
 -- Returns the predecessor array and the costs
--- bellmanFord :: G.Graph g => g l v -> G.Node -> ([G.Node], [BFResult v])
-bellmanFord _ _ = error "To Be Implemented"
+bellmanFord :: forall g v l. (G.Graph g, Real v) => g l v -> G.Node -> [(G.Node, BFResultElem v)]
+bellmanFord gr s = runST $ (bellmanFordA gr s :: ST s (STArray s G.Node (BFResultElem v))) >>= getAssocs

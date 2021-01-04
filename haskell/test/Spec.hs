@@ -36,7 +36,7 @@ infiniteTests = testGroup "Infinite Type Tests"
         testCase "abs +inf" $ abs PosInf @?= PosInf
     ]
 
-bellmanFordTests = testGroup "Bellman Ford Tests" [bellmanFordFunctions]
+bellmanFordTests = testGroup "Bellman Ford Tests" [bellmanFordFunctions, bellmanFordIntegrity]
 
 bellmanFordFunctions = testGroup "Auxiliar Functions" 
     [
@@ -81,6 +81,14 @@ bellmanFordFunctions = testGroup "Auxiliar Functions"
                 (Nothing, F 0), (Just 3, F 2), (Just 4, F 4), (Just 1, F 7), (Just 2, F (-2))]),
         testCase "bellManFordA clr646" $ do
             l <- (bellmanFordA clr3_646 1::TestArray) >>= getAssocs
+            mapM_ (uncurry (@?=)) (zip l $ zip [1..] [
+                (Nothing, F 0), (Just 1, F 3), (Just 2, -F 1), (Just 1, F 5),
+                (Just 4, F 11), (Just 7, NegInf), (Just 7, NegInf), (Just 7, NegInf), (Nothing, PosInf)])
+    ]
+
+bellmanFordIntegrity = testGroup "Integrity Test" [
+        testCase "bellmanFord clr646" $ do
+            let l = bellmanFord clr3_646 1
             mapM_ (uncurry (@?=)) (zip l $ zip [1..] [
                 (Nothing, F 0), (Just 1, F 3), (Just 2, -F 1), (Just 1, F 5),
                 (Just 4, F 11), (Just 7, NegInf), (Just 7, NegInf), (Just 7, NegInf), (Nothing, PosInf)])
