@@ -10,10 +10,14 @@ import Infinite
 type BFResultElem v = (Maybe G.Node, Infinite v)
 
 -- Receives number of nodes and returns init distance and pred
-initBF :: (MArray a (BFResultElem v) m) =>
+initBF :: (MArray a (BFResultElem v) m, Real v) =>
     (G.Node, G.Node) -> 
+    G.Node ->
     m (a G.Node (BFResultElem v))
-initBF (a,b) = newArray (a,b) (Nothing, PosInf)
+initBF (a,b) s = do
+    arr <- newArray (a,b) (Nothing, PosInf)
+    writeArray arr s (Nothing, F 0)
+    return arr
 
 -- Relaxes a given edge
 --   D[edge.to] = min(D[edge.to], D[edge.from] + edge.cost)
@@ -62,14 +66,12 @@ bfCatchNodes arr gr = mapM_ (bfCatchNode arr) (G.labEdges gr)
 
 -- Executes bellmanFord on given array
 bellmanFordA :: (MArray a (BFResultElem v) m, Real v, G.Graph g) =>
-    a G.Node (BFResultElem v) ->
     g l v ->
     G.Node ->
     m (a G.Node (BFResultElem v))
-bellmanFordA arr gr s = do
+bellmanFordA gr s = do
     let (i,f) = G.nodeRange gr
-    arr <- initBF (i,f)
-    writeArray arr s (Nothing, F 0)
+    arr <- initBF (i,f) s
     bfMainLoop f arr gr
     bfCatchNodes arr gr
     return arr
