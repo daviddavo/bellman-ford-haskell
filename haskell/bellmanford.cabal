@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.34.2.
+-- This file has been generated from package.yaml by hpack version 0.34.3.
 --
 -- see: https://github.com/sol/hpack
 
@@ -31,7 +31,8 @@ library
       array
     , base >=4.7 && <5
     , fgl
-    , graphviz
+    , split
+    , transformers
   default-language: Haskell2010
 
 executable bellmanford-exe
@@ -46,7 +47,8 @@ executable bellmanford-exe
     , base >=4.7 && <5
     , bellmanford
     , fgl
-    , graphviz
+    , split
+    , transformers
   default-language: Haskell2010
 
 test-suite bellmanford-test
@@ -63,9 +65,10 @@ test-suite bellmanford-test
     , base >=4.7 && <5
     , bellmanford
     , fgl
-    , graphviz
+    , split
     , tasty
     , tasty-hunit
     , tasty-quickcheck
     , test-invariant
+    , transformers
   default-language: Haskell2010

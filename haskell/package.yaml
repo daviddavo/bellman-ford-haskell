@@ -21,7 +21,8 @@ dependencies:
 - base >= 4.7 && < 5
 - array    # Better than lists
 - fgl      # Graph
-- graphviz # Loading graphs
+- split
+- transformers
 
 library:
   source-dirs: src

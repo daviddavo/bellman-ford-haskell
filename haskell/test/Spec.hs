@@ -5,9 +5,13 @@ import Test.Invariant
 import Test.QuickCheck
 import Test.QuickCheck.Monadic
 
+import Control.Monad.ST
+
 import Data.Array.MArray
 import Data.Array.IO
 import Data.Graph.Inductive.Graph hiding (pre)
+import Data.Graph.Inductive.Monad
+import Data.Graph.Inductive.Monad.IOArray
 import qualified Data.Graph.Inductive.Example as Ex
 import Data.Graph.Inductive.PatriciaTree
 import Infinite
@@ -18,6 +22,14 @@ type TestArray = IO (IOArray Node (BFResultElem Int))
 clr3_646 :: Gr Char Int
 clr3_646 = mkGraph (zip [1..] ['s', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'u']) [
     (1,2,3), (1,4,5), (1,6,2), (2,3,-4), (4,5,6), (5,4,-3), (6,7,3), (7,6,-6), (3,8,4), (5,8,8), (7,8,7)]
+
+clr3_646M :: IO (SGr Char Int)
+clr3_646M = mkGraphM (labNodes clr3_646) (labEdges clr3_646)
+
+clr3_646Expected :: [(Node, (Maybe Node, Infinite Int))]
+clr3_646Expected = zip [1..] [
+                (Nothing, F 0), (Just 1, F 3), (Just 2, -F 1), (Just 1, F 5),
+                (Just 4, F 11), (Just 7, NegInf), (Just 6, NegInf), (Just 7, NegInf), (Nothing, PosInf)]
 
 clr3_652 :: Gr Char Int
 clr3_652 = mkGraph (zip [1..] ['s', 't', 'x', 'y', 'z']) [
@@ -38,6 +50,10 @@ infiniteTests = testGroup "Infinite Type Tests"
 
 bellmanFordTests = testGroup "Bellman Ford Tests" [bellmanFordFunctions, bellmanFordIntegrity]
 
+-- TODO: Check for random graphs that
+-- 1) Every predecessor (Just x) is from a vertex
+-- 2) Every discovered path is valid (sum == calculated sum)
+-- 3) Is a minimum path? Comparing with dijkstra (?)
 bellmanFordFunctions = testGroup "Auxiliar Functions" 
     [
         testCase "initBF" $ do
@@ -63,6 +79,16 @@ bellmanFordFunctions = testGroup "Auxiliar Functions"
             run (relaxAllEdges arr gr)
             (p,d) <- run $ readArray arr to
             assert ( (p,d) == (Just from, F n) ),
+        testProperty "relaxAllEdgesM single" $ monadicIO $ do
+            n <- pick (choose (5, 100) :: Gen Int)
+            from <- pick $ choose (1,n)
+            to <- pick $ choose (1,n)
+            pre (from /= to)
+            arr <- run (initBF (1,n) from :: TestArray)
+            let gr = mkGraphM (zip [1..n] (repeat 'a')) [(from, to, n)] :: IO (SGr Char Int)
+            run (relaxAllEdgesM arr gr)
+            (p,d) <- run $ readArray arr to
+            assert ( (p,d) == (Just from, F n) ),
         -- It's dificult to test relaxAllEdges because we could have different
         -- implementations as long that when we execute it v-1 times we have
         -- a correct result array, it depends on the graph implementation
@@ -81,17 +107,16 @@ bellmanFordFunctions = testGroup "Auxiliar Functions"
                 (Nothing, F 0), (Just 3, F 2), (Just 4, F 4), (Just 1, F 7), (Just 2, F (-2))]),
         testCase "bellManFordA clr646" $ do
             l <- (bellmanFordA clr3_646 1::TestArray) >>= getAssocs
-            mapM_ (uncurry (@?=)) (zip l $ zip [1..] [
-                (Nothing, F 0), (Just 1, F 3), (Just 2, -F 1), (Just 1, F 5),
-                (Just 4, F 11), (Just 7, NegInf), (Just 7, NegInf), (Just 7, NegInf), (Nothing, PosInf)])
+            mapM_ (uncurry (@?=)) (zip l clr3_646Expected)
     ]
 
 bellmanFordIntegrity = testGroup "Integrity Test" [
         testCase "bellmanFord clr646" $ do
             let l = bellmanFord clr3_646 1
-            mapM_ (uncurry (@?=)) (zip l $ zip [1..] [
-                (Nothing, F 0), (Just 1, F 3), (Just 2, -F 1), (Just 1, F 5),
-                (Just 4, F 11), (Just 7, NegInf), (Just 7, NegInf), (Just 7, NegInf), (Nothing, PosInf)])
+            mapM_ (uncurry (@?=)) (zip l clr3_646Expected),
+        testCase "bellmanFordST clr646M (Monad)" $ do
+            l <- bellmanFordIO clr3_646M 1
+            mapM_ (uncurry (@?=)) (zip l clr3_646Expected)
     ]
 
 main :: IO ()
