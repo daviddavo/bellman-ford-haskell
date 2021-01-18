@@ -79,13 +79,14 @@ parseArgs args ("-p":xs) = parseArgs args { patricia=True } xs
 parseArgs args ("-d":d:xs) = parseArgs args { delimiter=d } xs
 parseArgs args [input, output] = do
     hi <- if input == "-" then return stdin else openFile input ReadMode
-    ti <- getCPUTime
     ci <- hGetContents hi
     let gr = readGraphEdgeList (delimiter args) ci :: IO (SGr () Int)
+    -- let gr = readGraphEdgeListFile (delimiter args) input :: IO (SGr () Int)
+    ti <- getCPUTime
     res <- BF.bellmanFordIO gr (source args)
+    tf <- getCPUTime
     ho <- if output == "-" then return stdout else openFile output WriteMode
     hPutStr ho $ showResultEdgeList res
-    tf <- getCPUTime
     hPutStr ho "# t1: "
     hPrint ho ((fromIntegral (tf-ti)::Double)/10^12)
     hClose hi
