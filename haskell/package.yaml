@@ -21,6 +21,7 @@ dependencies:
 - base >= 4.7 && < 5
 - array    # Better than lists
 - fgl      # Graph
+- deepseq
 - split
 - transformers
 
@@ -35,6 +36,8 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    - -O2
+    - -optc-O3
     dependencies:
     - bellmanford
 

@@ -16,6 +16,7 @@ import qualified Data.Graph.Inductive.Example as Ex
 import Data.Graph.Inductive.PatriciaTree
 import Infinite
 import BellmanFord
+import BellmanFord.Monad
 
 type TestArray = IO (IOArray Node (BFResultElem Int))
 
