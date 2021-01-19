@@ -13,15 +13,15 @@ MAX_WEIGHT = 1000
 MIN_WEIGHT = 1
 P_NEG = 0.005
 SEED = 42
-START_RANGE = 50
-STEP_RANGE = 50
-END_RANGE = 500
+START_RANGE = 5
+STEP_RANGE = 25
+END_TIME = 2*60
 CSV_SEPARATOR = ','
 
 if __name__ == "__main__":
-    densities = [0.01,0.05,0.1,0.25,0.5, 1]
+    densities = [(0.01,5,1000),(0.05,5,1000),(0.1,5,800),(0.25,5,500),(0.5,5,500), (1,5,400)]
 
-    for d in densities:
+    for (d,step,end) in densities:
         if (d >= 1):
             dstr = str(d)
         else:
@@ -30,12 +30,17 @@ if __name__ == "__main__":
         filename = "./data/" + dstr + ".csv"
 
         start = START_RANGE
+        done = set()
         if os.path.isfile(filename):
-            line = sp.check_output(['tail', '-1', filename], encoding='utf-8')
-            start = int(line.split(" ")[0]) + STEP_RANGE
+            print("Checking file", filename)
+            with open(filename, "r") as f:
+                for line in f:
+                    done.add(int(line.split(" ")[0]))
 
+        if len(done) > 0: print(f"Might skip {len(done)} tests")
         with open(filename, "a+") as f:
-            for gsize in range(start, END_RANGE, STEP_RANGE):
+            for gsize in range(start, end+1, step):
+                if gsize in done: continue
                 G = nx.gnp_random_graph(gsize, d, directed=True, seed=SEED)
 
                 random.seed(SEED)
@@ -45,16 +50,21 @@ if __name__ == "__main__":
                         w["weight"] = -w["weight"]
                     # print(u,v,d["weight"])
 
-                print(f"D: {d:.3f}, S: {gsize:6d}, E: {len(G.edges):9d}", end='\n', flush=True)
+                print(f"D: {d:.3f}, S: {gsize:6d}, E: {len(G.edges):9d},  ", end='', flush=True)
                 nx.write_weighted_edgelist(G, path="/tmp/graphin")
 
                 r = []
                 for i in range(0,3):
                     p = sp.Popen([EXE_FILE, "-s", "0", "/tmp/graphin", "/tmp/graphout"], encoding=None)
                     p.wait()
-                    r.append(resource.getrusage(resource.RUSAGE_CHILDREN).ru_utime)
+                    line = sp.check_output(['tail', '-1', "/tmp/graphout"], encoding='utf-8')
+                    # r.append(resource.getrusage(resource.RUSAGE_CHILDREN).ru_utime)
+                    r.append(float(line.split(" ")[-1]))
 
                 ravg = sum(r)/len(r)
                 rmin = min(r)
                 
-                print(gsize, ravg, rmin, file=f, flush=True)
+                print(f"T: {rmin:4.6f}s")
+                print(gsize, ravg, rmin, len(G.edges), file=f, flush=True)
+
+                if rmin > END_TIME: break
