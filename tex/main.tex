@@ -4,6 +4,7 @@
 \usepackage[a4paper, margin=1in]{geometry}
 \usepackage[spanish]{babel}
 \usepackage{gnuplottex}
+\usepackage[svgcolors]{xcolor}
 \usepackage{fancyhdr}
 \usepackage{minted}
 \usepackage{multicol}
@@ -26,15 +27,17 @@
 \fancyhead[LO]{\@title}
 \makeatother
 
+\newcommand{\codecomment}[1]{\noindent{\color{gray}\texttt{-{}- #1}}}
+
 \setminted{
-	frame=lines,
 	baselinestretch=1.2,
 }
 \usemintedstyle {emacs}
 
 \begin{document}
 \section{El algoritmo Bellman-Ford}
-El algoritmo Bellman-Ford resuelve el problema de caminos mínimos desde una sola fuente en el caso generalizado en el que haya bucles negativos en el grafo. El algoritmo relaja todos los vértices, decreciendo una estimación del coste del camino hasta llegar al coste mínimo real.\cite{CormenBellmanFord}.
+\label{sec:algor}
+El algoritmo Bellman-Ford resuelve el problema de caminos mínimos desde una sola fuente en el caso generalizado en el que haya bucles negativos en el grafo. El algoritmo relaja todos los vértices, decreciendo una estimación del coste del camino hasta llegar al coste mínimo real \cite{CormenBellmanFord}.
 
 Podemos expresarlo en pseudocódigo de la siguiente manera:
 
@@ -60,7 +63,7 @@ Podemos expresarlo en pseudocódigo de la siguiente manera:
 \end{algorithmic}
 \vspace{3mm}
 
-Tenemos un bucle que recorre todas las aristas y, para cada una de ellas, recorre todos los vértices. La operación de relajación tiene un coste constante, por lo que el primer bucle tendrá un coste de $\mathcal{O}\left(V\cdot E\right)$. El segundo bucle recorre todos los vértices para comprobar si hemos encontrado ciclos negativos, y tiene un coste de $\mathcal{O}\left(E\right)$. En otros algoritmos de grafos basados en recorridos, dependemos del número de aristas de la componente conexa en la que está el vértice fuente desde el que comenzamos el recorrido. Sin embargo, en Bellman-Ford recorremos todas las aristas, aunque haya aristas inalcanzables que siempre vayan a tener un $I[e].d = \infty$.
+Tenemos un bucle que recorre todas las aristas y, para cada una de ellas, recorre todos los vértices. La operación de relajación tiene un coste constante, por lo que el primer bucle tendrá un coste de $\mathcal{O}\left(V\cdot E\right)$. El segundo bucle recorre todos los vértices para comprobar si hemos encontrado ciclos negativos, y tiene un coste de $\mathcal{O}\left(E\right)$. En otros algoritmos de grafos basados en recorridos, dependemos del número de vértices y aristas alcanzables desde la fuente en la que empezamos a realizar el recorrido. Sin embargo, en Bellman-Ford recorremos todas las aristas, aunque haya aristas inalcanzables que siempre vayan a tener un $I[e].d = \infty$.
 
 \section{Entrada y salida}
 Tanto la entrada como la salida están representadas como ternas donde el primer elemento es el vértice origen, el segundo el vértice destino y el tercero el peso.
@@ -78,18 +81,18 @@ Usage: ./bellmanford [-f] [-p] [-s n] [-d] input output
 \end{verbatim}
 
 \section{Ventajas y desventajas de usar Haskell}
-La primera y más importante de todas es que así he aprendido a usar Haskell a un nivel más avanzado que en Programación Declarativa, con un uso intensivo de operaciones monádicas, operaciones de entrada-salida y librerías de estructuras de datos basadas en mónadas.
+La primera y más importante de todas es que así he aprendido a usar Haskell a un nivel más avanzado que en Programación Declarativa, con un uso intensivo de operaciones monádicas, operaciones de entrada-salida y librerías de estructuras de datos avanzadas (Arrays).
 
-Haskell, al ser un lenguaje de evaluación perezosa, puede disminuir el tiempo de computación enormemente, al evitar la evaluación de distintos términos, o al permitir fácilmente el uso de multithreading cambiando las opciones de compilación.
+Haskell, al ser un lenguaje de evaluación perezosa, puede disminuir el tiempo de computación enormemente, al evitar la evaluación de algunos términos, o al permitir fácilmente el uso de multithreading cambiando las opciones de compilación.
 
 Su entrada y salida es también perezosa, por lo que de incluirlo en un pipe entre dos procesos, se gestionará automáticamente, evaluando los resultados conforme vayan estando disponibles. Como no es necesario generar toda la entrada para poder generar toda la salida (a no ser que así lo requiera el problema), favorece la segmentación.
 
-El problema es, que si queremos analizar el coste temporal del algoritmo, sin usar un profiler es tarea difícil, pues incluso la entrada/salida es perezosa. Aún así, la entrada se ha hecho recibiendo una lista de aristas, con lo que tenemos un coste de $\mathcal{O}\left(E\right)$. La salida retorna el predecesor y coste de cada vértice, por lo que tendrá un coste del orden de $\mathcal{O}\left(V\right)$.
+El problema llega cuando queremos analizar el coste temporal de un algoritmo. Sin usar un profiler es tarea difícil, pues incluso la entrada/salida es perezosa. Aún así, la entrada se ha hecho recibiendo una lista de aristas, con lo que tenemos un coste de $\mathcal{O}\left(E\right)$. La salida retorna el predecesor y coste de cada vértice, por lo que tendrá un coste del orden de $\mathcal{O}\left(V\right)$.
 
 Siendo el coste del algoritmo $\mathcal{O}\left(E\cdot V\right)$, tendríamos que el coste total de la operación lectura-evaluación-escritura sería $\mathcal{O}\left(E + E\cdot V + V\right)=\mathcal{O}\left(E\cdot V\right)$, por lo que podríamos observar en las gráficas que la complejidad asintótica del algoritmo permanece igual.
 
 \section{Bellman-Ford en Haskell}
-Para poder representar los resultados se ha creado el tipo de datos \texttt{Infinite}, que nos permite representar $\infty$ y $-\infty$, y usarlo en operaciones. Proporciona legibilidad al código y mejor lectura de resultados, aunque es una de las principales fuentes de no-optimización, pues impide que usemos arrays desencajados (\textit{unboxed}), que almacenan los tipos básicos, pero con operaciones estrictas.
+Para poder representar los resultados se ha creado el tipo de datos \texttt{Infinite}, que nos permite representar $\infty$ y $-\infty$, y usarlo en operaciones. Proporciona legibilidad al código y mejor lectura de resultados, aunque es una de las principales fuentes de no-optimización, pues impide que usemos arrays desencajados (\textit{unboxed}), que almacenan los tipos básicos (Int, Float), pero con operaciones estrictas muy eficientes.
 
 \begin{minted}{haskell}
 data Infinite a = NaN | NegInf | F a | PosInf
@@ -99,13 +102,20 @@ instance Ord a => Ord (Infinite a)
 instance (Num a, Eq a) => Num (Infinite a)
 \end{minted}
 
-El grueso del algoritmo se encuentra en el fichero \texttt{BellmanFord.hs}, donde están definidas las funciones con sus respectivos tipos y comentarios. A continuación se expone solo el código de las funciones, sin su tipo:
+El grueso del algoritmo se encuentra en el fichero \texttt{BellmanFord.hs}, donde están definidas las funciones con sus respectivos tipos y comentarios. La función \mintinline{haskell}{bellmanFord gr s} recibe un grafo y un nodo fuente y retorna una lista de tuplas \mintinline{haskell}{(Maybe G.Node, Infinite v)}, donde el primer elemento es el predecesor (con lo que podríamos reconstruir el camino), y el segundo elemento es la distancia total del camino desde la fuente hasta ese nodo.
+
+A continuación se expone solo el código de las funciones, sin su tipo:
+
+\codecomment{Inicializa las distancias iniciales a $\infty$, excepto la del origen, que tiene distancia $0$. También establecemos los predecesores como \mintinline{haskell}{Nothing}.}
 \begin{minted}{haskell}
 initBF (a,b) s = do
     arr <- newArray (a,b) (Nothing, PosInf)
     writeArray arr s (Nothing, F 0)
     return arr
+\end{minted}
 
+\codecomment{Comprueba si usando un vertice dado llegamos a un camino mejor del que tenemos almacenado en $I$. Ejecutamos dicha operación en todos las aristas, $|V|-1$ veces.}
+\begin{minted}{haskell}
 relaxEdge l (f, t, cost) = do
     (_, dfr) <- readArray l f
     (_, dto) <- readArray l t
@@ -115,14 +125,20 @@ relaxEdge l (f, t, cost) = do
 relaxAllEdges arr gr = mapM_ (relaxEdge arr) (G.labEdges gr)
 
 bfMainLoop n arr gr = replicateM_ n $ relaxAllEdges arr gr
+\end{minted}
 
+\codecomment{Detectamos los nodos que se encuentran dentro de un ciclo infinito, para poder marcarlos con distancia $-\infty$.}
+\begin{minted}{haskell}
 bfCatchNode l (f, t, cost) = do
     (_, dfr) <- readArray l f
     (y, dto) <- readArray l t
     when (dto > dfr + F cost)  (writeArray l t (y, NegInf))
 
 bfCatchNodes arr gr = mapM_ (bfCatchNode arr) (G.labEdges gr)
+\end{minted}
 
+\codecomment{Agregamos todo el algoritmo, y creamos una interfaz para ejecutarlo de forma transparente sin que el usuario sepa que por detrás hay un array.}
+\begin{minted}{haskell}
 bellmanFordA gr s = do
     let (i,f) = G.nodeRange gr
     arr <- initBF (i,f) s
@@ -134,76 +150,6 @@ bellmanFord gr s = runST $
 	(bellmanFordA gr s :: ST s (STArray s G.Node (BFResultElem v))) >>= getAssocs
 \end{minted}
 
-\section{Monticulos sesgados en C++}
-Para el montículo se ha definido una clase parametrizada \mintinline{C++}|SkewHeap<K,V>|, donde \texttt{K} es el tipo de la clave y \texttt{V} el del valor a asignar. Tanto en los tests como en el análisis estadístico se ha usado la clase con claves de tipo \mintinline{C++}|unsigned|. Dicha clase guarda tan solo una variable de tipo \textit{Node}, que es la raíz del montículo. La clase \textit{Nodo} guarda la clave, el valor, y 3 punteros: a su padre, su hijo izquierdo, y su hijo derecho.
-
-Las dos funciones más relevantes, \textit{join} y \textit{decreaseKey}, se han implementado tal que así:
-
-\begin{minted}[linenos]{C++}
-Node * join(Node * n1, Node * n2) {
-  if (n1 == nullptr) return n2;
-  if (n2 == nullptr) return n1;
-
-  if (n1->_key > n2->_key)
-	std::swap(n1, n2);
-
-  std::swap(n1->_left, n1->_right);
-  n1->_left = join(n1->_left, n2);
-  n1->_left->_up = n1;
-
-  return n1;
-}
-\end{minted}
-\begin{minted}[linenos]{C++}
-void decreaseKey(Node * node, K newKey) {
-  if (_root == nullptr) throw EmptyHeapException();
-  if (node == nullptr) throw std::invalid_argument("Can't decrease nullptr");
-  if (newKey > node->_key) throw KeyGreaterException();
-
-  auto & up = node->_up;
-  node->_key = newKey;
-
-  if (up != nullptr) {
-	if (node != up->_right)
-	  std::swap(up->_left, up->_right);
-
-	up->_right = nullptr;
-	node->_up = nullptr;
-
-	_root = join(_root, node);
-	_root->_up = nullptr;
-}
-\end{minted}
-
-\section{Representación de los grafos en C++}
-El grafo se ha representado como una lista de adyaciencia parametrizada
-en el tipo de los pesos de las aristas, implementada como un vector estándar del 
-tipo \texttt{Vertex<W>}. El tipo Vertex se ha implementado como un struct que
-contiene una \texttt{string} etiqueta (no usada en el algoritmo), un descriptor de
-vertice (\texttt{vertex\_descriptor}) que le identifica en el grafo (su posición en
-la lista de adyacencia), y un vector estándar de aristas (\texttt{Edge<W>}). Cada arista es un struct compuesto por el descriptor de arista (\texttt{edge\_descriptor}), el peso de tipo \texttt{W}, y los descriptores de vértice tanto del vertice al que va, como del que viene. El descriptor de vértice del vértice que viene junto al descriptor de arista nos permiten identificar una arista en el grafo. El vértice con descriptor de vértice 0 se considerará el vértice nulo, cualquier intento de usar la función para añadir una arista al vértice nulo resultará en excepción.
-\begin{minted}{C++}
-typedef unsigned edge_descriptor;
-typedef unsigned vertex_descriptor;
-
-template <class W> 
-struct Edge {
-    edge_descriptor ed;
-    vertex_descriptor to;
-    vertex_descriptor from;
-    W weight;
-};
-
-template <class W>
-struct Vertex {
-    vertex_descriptor vd;
-    std::string label;
-    std::vector<Edge<W>> edges;
-};
-
-template <class W> using Graph = std::vector<Vertex<W>>;
-\end{minted}
-
 \section{Generación de las gráficas}
 Para el tratamiento estadístico de datos se han generado grafos aleatorios con el modelo Erdős-Rényi, usando la función \texttt{gnp\_random\_graph} de la librería networkx\footnote{\url{https://networkx.github.io/}} de Python. Los grafos generados se pasarían al programa \texttt{bellman-ford}, que leería el grafo y retornaría el predecesor y el coste total de los caminos a cada uno de los nodos, guardado en un archivo, junto con el tiempo que ha tardado en ejecutar el programa. Dicha salida será interpretada por Python, que generará un csv con el número de vértices y el tiempo, que será representado por gnuplot. Se han generado diversos archivos con distinta densidad de vértices ($0.01$, $0.05$, $0.1$, $0.25$, $0.5$ y $1$). En lugar de guardar los archivos con los grafos generados (de hasta varios GB para grafos densos), se han generado los grafos de prueba con la misma semilla: 42, por lo que los grafos se pueden volver a generar fácilmente usando la misma semilla y la misma función.
 
@@ -211,28 +157,60 @@ Para minimizar el efecto del resto del programa (I/O) se han generado los archiv
 
 Se ha ejecutado en un ordenador con una instalación `fresca' de Arch Linux, en CLI, y sin conexión a internet. Además, se le ha asignado al proceso la máxima prioridad de un scheduler no preemptivo (FIFO), por lo que el proceso no podría ser parado para ejecutar ningún otro proceso.
 
+Para cada una de las densidades se han generado grafos variando de 5 en 5 el número de nodos del grafo, parando cuando el tiempo de ejecución del algoritmo llegaba a ser mayor de 2 minutos.
+
+El script en Python está disponible en el archivo \texttt{genData.py}
+
+\section{Compilación y ejecución}
+Para compilar este documento, navega a la carpeta \texttt{tex} y escribe el comando \texttt{make main.pdf} (o simplemente \texttt{make}).
+
+Para compilar el programa en haskell, navega a la carpeta \texttt{haskell} y escribe el comando \texttt{stack build}. Puedes comprobar si la compilación ha sido correcta con \texttt{stack test}.
+Para ejecutar el programa puedes usar el comando \texttt{stack exec bellmanford-exe <args>}.
+
+El archivo de entrada al programa con la función \mintinline{haskell}{main} se encuentra en la ruta \texttt{./haskell/app/Main.hs}, y los archivos relativos a las funciones y el tipo \mintinline{haskell}{Infinite} se encuentran en la carpeta \texttt{./haskell/src/}. El código que se ejecuta para hacer los test unitarios se encuentra en \texttt{./haskell/app/test}.
+
 \newpage
 \section{Análisis de tiempo}
-\begin{figure}
+Como hemos discutido en la sección \ref{sec:algor}, el coste del algoritmo es $\mathcal{O}\left(|V|\cdot |E|\right)$. Hemos generado grafos con distinta densidad, que denominaremos $\delta$, por lo que el coste teniendo en cuesta sólo el número de vértices y la densidad será:
+
+$$|V|\cdot |E| = |V|\cdot \frac{|V|\cdot(|V|+1)\cdot\delta}{2}\in \mathcal{O}\left(\delta|V|^3\right)$$
+
+En las siguientes gráficas se ha hecho una regresión cúbica, generando distintos polinomios de grado 3 que, como podemos observar en la gráfica, se ajustan perfectamente a los datos. Además, en todas las funciones el ajuste produce un coeficiente de correlación mayor de $0.9$.
+
+
+\noindent
+\begin{minipage}{.5\textwidth}
+\begin{figure}[H]
 \centering
-\begin{gnuplot}[terminal=epslatex, terminaloptions=color]
+\noindent
+\begin{gnuplot}[terminal=epslatex, terminaloptions={color size 8.9cm,7cm}]
 xmax=800
 ymax=120
 
+set key left top
+
 set datafile separator space
 
-set style line 1 pt 7 lc rgb "#e51e10"
-set style line 2 pt 7 lc rgb "#a009e73"
-set style line 3 pt 7 lc rgb "#e69f00"
-set style line 7 pt 7 lc rgb "#56b4e9"
+set style line 1 pt 1 lc rgb "#e51e10"
+set style line 2 pt 1 lc rgb "#a009e73"
+set style line 3 pt 1 lc rgb "#e69f00"
+set style line 7 pt 1 lc rgb "#56b4e9"
 
-f001(x) = a001*x**3
-f005(x) = a005*x**3
-f01(x) =   a01*x**3
+f001(x) = a001*x**3+b001*x**2+c001*x
+f005(x) = a005*x**3+b005*x**2+c005*x
+f01(x) =   a01*x**3+b01*x**2+c01*x
 
-fit [0:xmax] [0:ymax] f001(x) "../data/001.csv" u 1:2 via a001
-fit [0:xmax] [0:ymax] f005(x) "../data/005.csv" u 1:2 via a005
-fit [0:xmax] [0:ymax] f01(x) "../data/01.csv" u 1:2 via a01
+fit [0:xmax] [0:ymax] f001(x) "../data/001.csv" u 1:2 via a001,b001,c001
+fit [0:xmax] [0:ymax] f005(x) "../data/005.csv" u 1:2 via a005,b005,c005
+fit [0:xmax] [0:ymax] f01(x) "../data/01.csv" u 1:2 via a01,b01,c01
+
+stats [0:xmax] [0:ymax] "../data/001.csv" u 2:(f001($2)) name "d001"
+stats [0:xmax] [0:ymax] "../data/005.csv" u 2:(f005($2)) name "d005"
+stats [0:xmax] [0:ymax] "../data/01.csv"  u 2:(f01($2))  name "d01"
+
+# set label 1 sprintf("r = %4.2f",d001_correlation)  at graph 0.1, graph 0.85
+# set label 2 sprintf("r = %4.2f",d005_correlation)  at graph 0.1, graph 0.75
+# set label 3 sprintf("r = %4.2f",d01_correlation)   at graph 0.1, graph 0.65
 
 set xlabel "$|V|$"
 set ylabel "$t (s)$"
@@ -243,31 +221,45 @@ plot [0:xmax] [0:ymax] \
 	f01(x) notitle w lines ls 3, \
 	"../data/001.csv" u 1:2 ls 1 notitle, \
 	"../data/005.csv" u 1:2 ls 2 notitle, \
-	"../data/01.csv" u 1:2 ls 3 notitle
+	"../data/01.csv" u 1:2 ls 3 notitle,  \
+	1/0 ls 1 lw 10 w p t "$\\delta=0.01$", \
+	1/0 ls 2 lw 10 w p t "$\\delta=0.05$", \
+	1/0 ls 3 lw 10 w p t "$\\delta=0.10$"
 \end{gnuplot}
 \end{figure}
-
-\begin{figure}
+\end{minipage} %
+\begin{minipage}{.5\textwidth}
+\begin{figure}[H]
 \centering
-\begin{gnuplot}[terminal=epslatex, terminaloptions=color]
-xmax=400
+\begin{gnuplot}[terminal=epslatex, terminaloptions={color size 7.9cm,7cm}]
+xmax=350
 ymax=120
 
-set style line 1 pt 7 lc rgb "#e51e10"
-set style line 2 pt 7 lc rgb "#a009e73"
-set style line 3 pt 7 lc rgb "#e69f00"
-set style line 7 pt 7 lc rgb "#56b4e9"
+set key left top
 
-f025(x) = a025*x**3
-f05(x)  = a05 *x**3
-f1(x)   = a1  *x**3
+set style line 1 pt 1 lc rgb "#e51e10"
+set style line 2 pt 1 lc rgb "#a009e73"
+set style line 3 pt 1 lc rgb "#e69f00"
+set style line 7 pt 1 lc rgb "#56b4e9"
 
-fit [0:xmax] [0:ymax] f025(x) "../data/025.csv" u 1:2 via a025
-fit [0:xmax] [0:ymax] f05(x)  "../data/05.csv"  u 1:2 via a05
-fit [0:xmax] [0:ymax] f1(x)   "../data/1.csv" u 1:2 via a1
+f025(x) = a025*x**3+b025*x**2+c025*x
+f05(x)  = a05 *x**3+b05*x**2+c05*x
+f1(x)   = a1  *x**3+b1*x**2+c1*x
+
+fit [0:xmax] [0:ymax] f025(x) "../data/025.csv" u 1:2 via a025,b025,c025
+fit [0:xmax] [0:ymax] f05(x)  "../data/05.csv"  u 1:2 via a05,b05,c05
+fit [0:xmax] [0:ymax] f1(x)   "../data/1.csv" u 1:2 via a1,b1,c1
+
+stats [0:xmax] [0:ymax] "../data/025.csv" u 2:(f025($2)) name "d025"
+stats [0:xmax] [0:ymax] "../data/05.csv"  u 2:(f05($2))  name "d05"
+stats [0:xmax] [0:ymax] "../data/1.csv"   u 2:(f1($2))   name "d1"
+
+# set label 1 sprintf("r = %4.2f",d025_correlation)  at graph 0.1, graph 0.85
+# set label 2 sprintf("r = %4.2f",d05_correlation)   at graph 0.1, graph 0.75
+# set label 3 sprintf("r = %4.2f",d1_correlation)    at graph 0.1, graph 0.65
 
 set xlabel "$|V|$"
-set ylabel "$t (s)$"
+# set ylabel "$t (s)$"
 
 plot [0:xmax] [0:ymax] \
 	f025(x) notitle w lines ls 1, \
@@ -275,13 +267,15 @@ plot [0:xmax] [0:ymax] \
 	f1(x)   notitle w lines ls 3, \
 	"../data/025.csv" u 1:2 ls 1 notitle, \
 	"../data/05.csv"  u 1:2 ls 2 notitle, \
-	"../data/1.csv"   u 1:2 ls 3 notitle
+	"../data/1.csv"   u 1:2 ls 3 notitle, \
+	1/0 ls 1 lw 10 w p t "$\\delta=0.25$", \
+	1/0 ls 2 lw 10 w p t "$\\delta=0.50$", \
+	1/0 ls 3 lw 10 w p t "$\\delta=1$"
 \end{gnuplot}
 \end{figure}
+\end{minipage}
 
-El insertar cada uno de los vértices a la cola de prioridad tendrá un coste de $\mathcal{O}(n\log n)$. A la hora de realizar el bucle mientras que no esté vacío, recorreremos todos los vértices eliminando la clave ($\mathcal{O} (\log n)$) y, para cada uno de sus vecinos, podemos decrecer la clave $\mathcal{O}(\log n)$. Esto nos deja un coste de $\mathcal{O}\left(a\log n+n\log n\right)$, donde $a$ es el número de aristas y $n$ el número de vértices. Podemos implementar el algoritmo en un tiempo menor con una cola de prioridad en la que \textit{decrecerClave} tenga coste constante, en cuyo caso el coste será $\mathcal{O}(a + n\log n)$. En nuestro caso, al generar grafos aleatorios con una densidad de aristas dada, el número de aristas será $a = \alpha\cdot(n\cdot(n-1))/2$, por lo que el coste en complejidad será del orden $\mathcal{O}((\alpha\cdot n^2+n)\log n)$. Cuando el grafo sea muy disperso ($\alpha$ pequeño), $\alpha\cdot n^2$ será menor que $n$. En la figura vemos el tiempo de ejecución en algoritmos aleatorios con distinto número de aristas (dependiente del número de vértices). Como podemos observar en la gráfica, se ajustan mucho a la función $(an^2+bn)\cdot log(n)$. Es más, la media de las desviaciones medias de las cuatro funciones es $\sigma=0.05486$
-
-\nocite{*} % <-- Recuerda quitar esto
+% \nocite{*} % <-- Recuerda quitar esto
 \bibliographystyle{alpha}
 \bibliography{references}
 

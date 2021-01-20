@@ -26,36 +26,43 @@ parseLine c = f.splitOn c
 readEdgeListStr :: Read w => String -> String -> [LEdge w]
 readEdgeListStr c str = map (parseLine c) $ lines str
 
-readEdgeListIO :: Read w => String -> Handle -> IO [LEdge w]
-readEdgeListIO c h = do
-    d <- hIsEOF h
-    if d then return [] else do
-        line <- hGetLine h
-        el <- readEdgeListIO c h
-        return (parseLine c line: el)
-
 generateUNodes :: Int -> [UNode]
 generateUNodes n = zip [1..n] (repeat ())
 
 readGraphEdgeList :: (GraphM m g, Read w) => String -> String -> m (g () w)
 readGraphEdgeList del str = let el = readEdgeListStr del str in mkGraphM (generateUNodes $ maximum [max x y | (x,y,_) <- el]) el
 
-readGraphEdgeListFile :: (GraphM IO g, Read w) => String -> String -> IO (g () w)
-readGraphEdgeListFile del file = do
-    h <- if file == "-" then return stdin else openFile file ReadMode
-    el <- readEdgeListIO del h
-    hClose h
-    mkGraphM (generateUNodes $ maximum [max x y | (x,y,_) <- el]) el
-
 showResultEdgeList :: Show w => [(Node, BFResultElem w)] -> String
 showResultEdgeList = unlines . map f
     where f (n,(Just p,c)) = show (n-1) ++ " " ++ show (p-1) ++ " " ++ show c
           f (n,(Nothing,c)) = show (n-1) ++ " " ++ "s" ++ " " ++ show c
 
+timeBFInt :: Handle -> Handle -> String -> Node -> IO ()
+timeBFInt hi ho del s = do
+    ci <- hGetContents hi
+    let gr = readGraphEdgeList del ci :: IO (SGr () Int)
+    ti <- getCPUTime
+    res <- BF.bellmanFordIO gr s
+    tf <- getCPUTime
+    hPutStr ho $ showResultEdgeList res
+    hPutStr ho "# t1: "
+    hPrint ho ((fromIntegral (tf-ti)::Double)/10^12)
+
+timeBFFloat :: Handle -> Handle -> String -> Node -> IO ()
+timeBFFloat hi ho del s = do
+    ci <- hGetContents hi
+    let gr = readGraphEdgeList del ci :: IO (SGr () Float)
+    ti <- getCPUTime
+    res <- BF.bellmanFordIO gr s
+    tf <- getCPUTime
+    hPutStr ho $ showResultEdgeList res
+    hPutStr ho "# t1: "
+    hPrint ho ((fromIntegral (tf-ti)::Double)/10^12)
+
+
 helpStr :: String -> String
 helpStr bin = "Usage: " ++ bin ++ " [-f] [-p] [-s n] [-d] input output \n\
               \    -s n            uses n as source for the algorithm. By default n=0\n\
-              \    -p              uses patricia trees instead of arrays as backend\n\
               \    -f              indicates that numbers in edgelist are floats\n\
               \    -d              indicates the delimiter to be used. Space by default\n\
               \\n\
@@ -79,16 +86,9 @@ parseArgs args ("-p":xs) = parseArgs args { patricia=True } xs
 parseArgs args ("-d":d:xs) = parseArgs args { delimiter=d } xs
 parseArgs args [input, output] = do
     hi <- if input == "-" then return stdin else openFile input ReadMode
-    ci <- hGetContents hi
-    let gr = readGraphEdgeList (delimiter args) ci :: IO (SGr () Int)
-    -- let gr = readGraphEdgeListFile (delimiter args) input :: IO (SGr () Int)
-    ti <- getCPUTime
-    res <- BF.bellmanFordIO gr (source args)
-    tf <- getCPUTime
     ho <- if output == "-" then return stdout else openFile output WriteMode
-    hPutStr ho $ showResultEdgeList res
-    hPutStr ho "# t1: "
-    hPrint ho ((fromIntegral (tf-ti)::Double)/10^12)
+    let tbf = if floats args then timeBFInt else timeBFFloat
+    tbf hi ho (delimiter args) (source args)
     hClose hi
     hClose ho
     return ExitSuccess
